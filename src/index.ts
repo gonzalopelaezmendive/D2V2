@@ -1,8 +1,13 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import { TUTOR_SYSTEM_PROMPT } from './config/tutorPrompt';
+import Anthropic from '@anthropic-ai/sdk';
+import { TUTOR_SYSTEM_PROMPT } from './config/tutorPrompt.js';
 
 dotenv.config();
+
+const anthropic = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+});
 
 const app = express();
 app.use(express.json());
@@ -42,7 +47,7 @@ app.post('/api/usuarios/registro', (req, res) => {
 /**
  * ENDPOINT 2: Orquestador de Interacción de Agentes
  */
-app.post('/api/tutor/interaccion', (req, res) => {
+app.post('/api/tutor/interaccion', async (req, res) => {
     const { usuarioId, modo, temaExamen, entradaUsuario } = req.body;
     const usuario = usuariosD2V2[usuarioId];
 
@@ -55,17 +60,40 @@ app.post('/api/tutor/interaccion', (req, res) => {
     --- CONTEXTO OPERATIVO D2V2 ---
     EDAD: ${usuario.edad} años.
     PERFIL CLÍNICO DEL USUARIO: ${JSON.stringify(usuario.perfilClinico)}
-    MODO: ${modo} ${temaExamen ? `(Temática de Examen: \${temaExamen})` : ''}
+    MODO: ${modo} ${temaExamen ? `(Temática de Examen: ${temaExamen})` : ''}
     ENTRADA DE PANTALLA: "${entradaUsuario || 'Sesión Iniciada'}"
     `;
 
-    const promptCompleto = `${TUTOR_SYSTEM_PROMPT}\n${contextoInyectado}`;
+    try {
+        const message = await anthropic.messages.create({
+            model: 'claude-3-5-sonnet-20241022',
+            max_tokens: 1024,
+            system: TUTOR_SYSTEM_PROMPT,
+            messages: [
+                {
+                    role: 'user',
+                    content: contextoInyectado
+                }
+            ]
+        });
 
-    res.json({
-        aplicacion: "D2V2 AI Engine",
-        estado: "Payload estructurado y listo para el pipeline de LLM",
-        vistaPreviaPrompt: promptCompleto.substring(0, 380) + "..."
-    });
+        const respuestaTutor = message.content[0]?.type === 'text'
+            ? message.content[0].text
+            : '';
+
+        res.json({
+            aplicacion: "D2V2 AI Engine",
+            estado: "Respuesta generada con éxito",
+            usuarioId,
+            respuesta: respuestaTutor
+        });
+    } catch (error: any) {
+        console.error('Error al comunicarse con Anthropic:', error);
+        res.status(500).json({
+            error: "Error al generar respuesta del tutor",
+            detalle: error.message
+        });
+    }
 });
 
 app.listen(PORT, () => {
