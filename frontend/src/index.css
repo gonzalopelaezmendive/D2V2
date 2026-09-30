@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Estilos base optimizados para dislexia */
+@layer base {
+  :root {
+    /* Tamaño de fuente base más grande */
+    font-size: 18px;
+  }
+
+  body {
+    @apply bg-d2v2-neutral-50 text-d2v2-neutral-800;
+    @apply leading-loose;
+    /* Espaciado entre letras más amplio */
+    letter-spacing: 0.05em;
+    /* Anti-aliasing suave */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Headings con espaciado generoso */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold mb-4 leading-relaxed;
+    @apply text-d2v2-neutral-900;
+  }
+
+  h1 { @apply text-4xl mb-6; }
+  h2 { @apply text-3xl mb-5; }
+  h3 { @apply text-2xl mb-4; }
+
+  /* Párrafos con espaciado */
+  p {
+    @apply mb-4 max-w-3xl;
+  }
+
+  /* Botones con alta visibilidad */
+  button {
+    @apply transition-all duration-200;
+    @apply focus:outline-none focus:ring-4 focus:ring-d2v2-primary/50;
+  }
+}
+
+/* Componentes reutilizables */
+@layer components {
+  /* Botón primario accesible */
+  .btn-primary {
+    @apply bg-d2v2-primary text-white font-bold;
+    @apply px-6 py-4 rounded-xl;
+    @apply hover:bg-d2v2-primary/90;
+    @apply transform hover:scale-105;
+    @apply shadow-lg hover:shadow-xl;
+  }
+
+  /* Tarjeta con espaciado generoso */
+  .card-d2v2 {
+    @apply bg-white rounded-2xl shadow-lg;
+    @apply p-8 space-y-6;
+    @apply border-2 border-d2v2-neutral-200;
+  }
+
+  /* Input optimizado para dislexia */
+  .input-d2v2 {
+    @apply w-full px-6 py-4 text-lg;
+    @apply border-2 border-d2v2-neutral-300 rounded-xl;
+    @apply focus:border-d2v2-primary focus:ring-4 focus:ring-d2v2-primary/20;
+    @apply bg-white;
+  }
+
+  /* Contenedor con ancho máximo y centrado */
+  .container-d2v2 {
+    @apply max-w-6xl mx-auto px-6 py-8;
+  }
+}
+
+/* Utilidades personalizadas */
+@layer utilities {
+  /* Espaciado entre líneas extra generoso */
+  .line-spacing-extra {
+    line-height: 2.5;
+  }
+
+  /* Espaciado entre palabras amplio */
+  .word-spacing-wide {
+    word-spacing: 0.3em;
+  }
+
+  /* Texto con mayor contraste */
+  .text-high-contrast {
+    @apply text-d2v2-neutral-900;
+    font-weight: 600;
+  }
+}
+
+/* Animaciones suaves para feedback visual */
+@keyframes pulse-success {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+.animate-pulse-success {
+  animation: pulse-success 0.5s ease-in-out;
+}
+
+/* Modo oscuro (opcional) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    @apply bg-d2v2-neutral-900 text-d2v2-neutral-100;
+  }
+}
