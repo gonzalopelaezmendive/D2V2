@@ -1,121 +1,134 @@
 import { useState } from 'react';
-import { Button } from './components/Button';
-import { Card } from './components/Card';
-import { Input } from './components/Input';
+import { Login } from './pages/Login';
+import { Registro } from './pages/Registro';
+import { ConsentimientoParental } from './pages/ConsentimientoParental';
+import { Dashboard } from './pages/Dashboard';
+import { Ejercicios } from './pages/Ejercicios';
+import { Progreso } from './pages/Progreso';
+
+type Vista =
+  | 'login'
+  | 'registro'
+  | 'consentimiento'
+  | 'dashboard'
+  | 'ejercicios'
+  | 'preparacion-examen'
+  | 'progreso';
 
 function App() {
-  const [nombre, setNombre] = useState('');
+  const [vistaActual, setVistaActual] = useState<Vista>('login');
+  const [usuarioActual, setUsuarioActual] = useState<{
+    id?: string;
+    nombre: string;
+    edad: number;
+    consentimientoAprobado?: boolean;
+  } | null>(null);
+
+  const handleLoginExitoso = (tipo: 'adulto' | 'menor') => {
+    // Mock de login exitoso
+    if (tipo === 'menor') {
+      setUsuarioActual({
+        nombre: 'Juan',
+        edad: 10,
+        consentimientoAprobado: false,
+      });
+      setVistaActual('consentimiento');
+    } else {
+      // Vista de supervisión para padres (próximamente)
+      alert('Dashboard de padres - próximamente');
+    }
+  };
+
+  const handleRegistroExitoso = (usuarioId: string) => {
+    setUsuarioActual({
+      id: usuarioId,
+      nombre: 'Nuevo Usuario',
+      edad: 10,
+      consentimientoAprobado: false,
+    });
+    setVistaActual('consentimiento');
+  };
+
+  const handleConsentimientoAprobado = () => {
+    if (usuarioActual) {
+      setUsuarioActual({
+        ...usuarioActual,
+        consentimientoAprobado: true,
+      });
+      setVistaActual('dashboard');
+    }
+  };
+
+  const handleConsentimientoRechazado = () => {
+    setUsuarioActual(null);
+    setVistaActual('login');
+  };
 
   return (
-    <div className="container-d2v2 min-h-screen">
-      {/* Header */}
-      <header className="text-center py-12">
-        <h1 className="text-6xl font-bold text-d2v2-primary mb-4">
-          🚀 NexoMind
-        </h1>
-        <p className="text-xl text-d2v2-neutral-700 leading-loose max-w-3xl mx-auto">
-          Tu espacio personalizado para aprender de forma diferente
-        </p>
-      </header>
+    <div className="min-h-screen bg-d2v2-neutral-50">
+      {/* Login */}
+      {vistaActual === 'login' && (
+        <Login
+          onLoginExitoso={handleLoginExitoso}
+          onRegistroNuevo={() => setVistaActual('registro')}
+        />
+      )}
 
-      {/* Demo de Componentes */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-        {/* Tarjeta de Bienvenida */}
-        <Card emoji="👋" title="¡Bienvenido!">
-          <p className="text-lg leading-loose">
-            Este es un espacio diseñado <strong>para ti</strong>.
-          </p>
-          <p className="text-lg leading-loose">
-            Aprende a tu ritmo con herramientas que se adaptan
-            a tu forma de pensar.
-          </p>
-        </Card>
+      {/* Registro */}
+      {vistaActual === 'registro' && (
+        <Registro onRegistroExitoso={handleRegistroExitoso} />
+      )}
 
-        {/* Tarjeta de Registro */}
-        <Card emoji="✏️" title="Prueba el Input">
-          <div className="space-y-4">
-            <p className="text-lg leading-loose">
-              Los inputs tienen espaciado generoso y bordes claros.
+      {/* Consentimiento Parental */}
+      {vistaActual === 'consentimiento' && usuarioActual && (
+        <ConsentimientoParental
+          nombreMenor={usuarioActual.nombre}
+          edadMenor={usuarioActual.edad}
+          onAprobar={handleConsentimientoAprobado}
+          onRechazar={handleConsentimientoRechazado}
+        />
+      )}
+
+      {/* Dashboard */}
+      {vistaActual === 'dashboard' && usuarioActual && (
+        <Dashboard
+          nombre={usuarioActual.nombre}
+          onIniciarEjercicios={() => setVistaActual('ejercicios')}
+          onIniciarExamen={() => setVistaActual('preparacion-examen')}
+          onVerProgreso={() => setVistaActual('progreso')}
+        />
+      )}
+
+      {/* Ejercicios */}
+      {vistaActual === 'ejercicios' && (
+        <Ejercicios onFinalizar={() => setVistaActual('dashboard')} />
+      )}
+
+      {/* Preparación de Examen */}
+      {vistaActual === 'preparacion-examen' && (
+        <div className="container-d2v2 min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-8xl mb-6">📚</div>
+            <h1 className="text-4xl font-bold mb-4">
+              Preparación de Examen
+            </h1>
+            <p className="text-xl text-d2v2-neutral-700 mb-8">
+              Próximamente disponible
             </p>
-            <Input
-              label="¿Cómo te llamas?"
-              emoji="👤"
-              placeholder="Escribe tu nombre aquí"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-            />
-            {nombre && (
-              <p className="text-lg text-d2v2-success font-bold">
-                ¡Hola {nombre}! 👋
-              </p>
-            )}
+            <button
+              onClick={() => setVistaActual('dashboard')}
+              className="btn-primary"
+            >
+              ⬅️ Volver al inicio
+            </button>
           </div>
-        </Card>
-      </div>
-
-      {/* Botones de Ejemplo */}
-      <Card emoji="🎨" title="Componentes Interactivos">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Button variant="primary" emoji="🚀" size="lg">
-            Primario
-          </Button>
-          <Button variant="secondary" emoji="⭐" size="lg">
-            Secundario
-          </Button>
-          <Button variant="success" emoji="✅" size="lg">
-            Éxito
-          </Button>
-          <Button variant="warning" emoji="⚠️" size="lg">
-            Advertencia
-          </Button>
         </div>
+      )}
 
-        <div className="mt-8 space-y-4">
-          <h3 className="text-2xl font-bold">Diseñado para potenciar tu aprendizaje:</h3>
-          <ul className="space-y-3 text-lg leading-loose">
-            <li className="flex items-start gap-3">
-              <span className="text-2xl">✨</span>
-              <span>
-                <strong>Claridad visual:</strong> Textos cortos y espaciados
-              </span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="text-2xl">🔤</span>
-              <span>
-                <strong>Letras grandes:</strong> Fáciles de seguir y leer
-              </span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="text-2xl">🎯</span>
-              <span>
-                <strong>Emojis guía:</strong> Para saber dónde estás
-              </span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="text-2xl">🌈</span>
-              <span>
-                <strong>Colores vibrantes:</strong> Distingue cada sección
-              </span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="text-2xl">💫</span>
-              <span>
-                <strong>Respuesta inmediata:</strong> Ves lo que haces
-              </span>
-            </li>
-          </ul>
-        </div>
-      </Card>
-
-      {/* Footer */}
-      <footer className="text-center py-12 text-d2v2-neutral-600">
-        <p className="text-lg">
-          🤖 Construido con React + Vite + Tailwind CSS
-        </p>
-        <p className="text-base mt-2">
-          Backend: Express + PostgreSQL + Prisma + Claude AI
-        </p>
-      </footer>
+      {/* Progreso */}
+      {vistaActual === 'progreso' && (
+        <Progreso onVolver={() => setVistaActual('dashboard')} />
+      )}
     </div>
   );
 }
