@@ -19,9 +19,19 @@ model Usuario {
   id        String   @id @default(cuid())
   nombre    String
   edad      Int
-  correo    String?  @unique
+  email     String?  @unique // Renombrado de correo a email para consistencia con OAuth
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Autenticación OAuth
+  oauthProvider String? // 'google' | 'microsoft' | 'apple' | 'facebook'
+  oauthId       String? @unique
+  avatar        String? // URL del avatar del proveedor OAuth
+
+  // Tipo de usuario y permisos
+  tipoUsuario           String  @default("menor") // 'menor' | 'adulto'
+  consentimientoParental Boolean @default(false) // Si el menor tiene aprobación parental
+  tutorLegalEmail       String? // Email del tutor que aprobó (si es menor)
 
   // Perfil clínico almacenado como JSON
   perfilClinico Json // { tipo_dislexia, grafemas_conflictivos[], procesos_afectados[] }
@@ -30,7 +40,8 @@ model Usuario {
   sesiones          Sesion[]
   metricasAgregadas MetricaAgregada[]
 
-  @@index([correo])
+  @@index([email])
+  @@index([oauthProvider, oauthId])
   @@map("usuarios")
 }
 

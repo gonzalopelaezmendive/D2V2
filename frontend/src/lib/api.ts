@@ -9,12 +9,35 @@ export class ApiError extends Error {
   }
 }
 
+// Token JWT para autenticación
+let authToken: string | null = null;
+
+export const setAuthToken = (token: string) => {
+  authToken = token;
+  localStorage.setItem('auth_token', token);
+};
+
+export const getAuthToken = () => {
+  if (!authToken) {
+    authToken = localStorage.getItem('auth_token');
+  }
+  return authToken;
+};
+
+export const clearAuthToken = () => {
+  authToken = null;
+  localStorage.removeItem('auth_token');
+};
+
 async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  const token = getAuthToken();
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     headers: {
       'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
       ...options?.headers,
     },
+    credentials: 'include', // Enviar cookies de sesión
     ...options,
   });
 
@@ -89,4 +112,32 @@ export const sesionesApi = {
     fetchApi(`/api/sesiones/${sesionId}/finalizar`, {
       method: 'POST',
     }),
+};
+
+// API de Autenticación OAuth
+export const authApi = {
+  loginGoogle: (tipo: 'menor' | 'adulto') => {
+    window.location.href = `${API_BASE_URL}/api/auth/google?tipo=${tipo}`;
+  },
+
+  loginMicrosoft: (tipo: 'menor' | 'adulto') => {
+    window.location.href = `${API_BASE_URL}/api/auth/microsoft?tipo=${tipo}`;
+  },
+
+  verificarToken: () => fetchApi('/api/auth/verify', { method: 'GET' }),
+
+  logout: () => fetchApi('/api/auth/logout', { method: 'POST' }),
+};
+
+// API de Generación de Ejercicios
+export const generarEjerciciosApi = {
+  generar: (data: {
+    usuarioId: string;
+    tipo?: string;
+    nivelDificultad?: number;
+    cantidad?: number;
+  }) => fetchApi('/api/ejercicios/generar', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
 };

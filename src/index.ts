@@ -1,8 +1,13 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import session from 'express-session';
+import cors from 'cors';
 import Anthropic from '@anthropic-ai/sdk';
 import { TUTOR_SYSTEM_PROMPT } from './config/tutorPrompt.js';
 import { prisma } from './lib/prisma.js';
+import passport from './config/oauth.js';
+import authRoutes from './routes/auth.js';
+import ejerciciosRoutes from './routes/ejercicios.js';
 
 dotenv.config();
 
@@ -11,7 +16,28 @@ const anthropic = new Anthropic({
 });
 
 const app = express();
+
+// Middleware
+app.use(cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:5178',
+    credentials: true,
+}));
 app.use(express.json());
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'temp-session-secret-change-in-production',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
+    },
+}));
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Rutas de autenticación y ejercicios
+app.use('/api/auth', authRoutes);
+app.use('/api/ejercicios', ejerciciosRoutes);
 
 const PORT = process.env.PORT || 3000;
 
@@ -19,7 +45,7 @@ const PORT = process.env.PORT || 3000;
  * ENDPOINT 1: Ingesta y Procesamiento de Diagnóstico para D2V2
  */
 app.post('/api/usuarios/registro', async (req, res) => {
-    const { nombre, edad, correo, perfilClinico } = req.body;
+    const { nombre, edad, email, perfilClinico } = req.body;
 
     if (!nombre || !edad || !perfilClinico) {
          res.status(400).json({ error: "Faltan variables críticas para la personalización de D2V2." });
@@ -31,7 +57,7 @@ app.post('/api/usuarios/registro', async (req, res) => {
             data: {
                 nombre,
                 edad,
-                correo,
+                email,
                 perfilClinico,
             },
         });

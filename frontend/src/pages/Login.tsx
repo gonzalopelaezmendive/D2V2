@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { authApi } from '../lib/api';
 
 interface LoginProps {
   onLoginExitoso: (tipo: 'adulto' | 'menor') => void;
@@ -11,9 +12,20 @@ export const Login = ({ onLoginExitoso, onRegistroNuevo }: LoginProps) => {
   const [tipoUsuario, setTipoUsuario] = useState<'adulto' | 'menor' | null>(null);
 
   const handleOAuthLogin = (provider: string) => {
-    console.log(`Iniciando OAuth con ${provider}`);
-    // Aquí irá la lógica real de OAuth
-    alert(`Conectando con ${provider}... (próximamente)`);
+    if (!tipoUsuario) return;
+
+    switch (provider) {
+      case 'Google':
+        authApi.loginGoogle(tipoUsuario);
+        break;
+      case 'Microsoft':
+        authApi.loginMicrosoft(tipoUsuario);
+        break;
+      case 'Apple':
+      case 'Facebook':
+        alert(`Integración con ${provider} próximamente`);
+        break;
+    }
   };
 
   return (
