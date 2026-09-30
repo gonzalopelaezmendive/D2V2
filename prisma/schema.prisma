@@ -1,0 +1,161 @@
+// Prisma Schema para D2V2 - Aplicación de apoyo para dislexia
+// Optimizado para deployment en Vercel + Neon PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // Para migraciones en Neon
+}
+
+// ========================================
+// MODELO DE USUARIO Y PERFIL CLÍNICO
+// ========================================
+
+model Usuario {
+  id        String   @id @default(cuid())
+  nombre    String
+  edad      Int
+  correo    String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Perfil clínico almacenado como JSON
+  perfilClinico Json // { tipo_dislexia, grafemas_conflictivos[], procesos_afectados[] }
+
+  // Relaciones
+  sesiones          Sesion[]
+  metricasAgregadas MetricaAgregada[]
+
+  @@index([correo])
+  @@map("usuarios")
+}
+
+// ========================================
+// SESIONES DE INTERACCIÓN
+// ========================================
+
+model Sesion {
+  id          String    @id @default(cuid())
+  usuarioId   String
+  fechaInicio DateTime  @default(now())
+  fechaFin    DateTime?
+
+  // Contexto de la sesión
+  modo          String // 'ejercicios_diarios' | 'preparacion_examen'
+  temaEstudiado String? // Solo si modo es 'preparacion_examen'
+
+  // Relaciones
+  usuario       Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  interacciones Interaccion[]
+  ejercicios    Ejercicio[]
+
+  @@index([usuarioId, fechaInicio])
+  @@map("sesiones")
+}
+
+// ========================================
+// INTERACCIONES CON LA IA
+// ========================================
+
+model Interaccion {
+  id        String   @id @default(cuid())
+  sesionId  String
+  timestamp DateTime @default(now())
+
+  // Contenido de la interacción
+  contextoInyectado String @db.Text // El prompt completo enviado a Claude
+  respuestaIA       String @db.Text // La respuesta generada
+  tokensUsados      Int?   // Para tracking de costos
+
+  // Relaciones
+  sesion     Sesion      @relation(fields: [sesionId], references: [id], onDelete: Cascade)
+  ejercicios Ejercicio[]
+
+  @@index([sesionId, timestamp])
+  @@map("interacciones")
+}
+
+// ========================================
+// EJERCICIOS GENERADOS
+// ========================================
+
+model Ejercicio {
+  id             String    @id @default(cuid())
+  sesionId       String
+  interaccionId  String?
+  tiempoInicio   DateTime  @default(now())
+  tiempoFin      DateTime?
+
+  // Detalles del ejercicio
+  tipo            String // 'rimas' | 'separacion_silabas' | 'reconocimiento_visual' | 'lectura_comprensiva' | etc.
+  nivelDificultad Int    @default(1) // 1-5
+  contenido       Json   // Estructura flexible: { pregunta, opciones, respuestaCorrecta, pistas[] }
+
+  // Relaciones
+  sesion    Sesion               @relation(fields: [sesionId], references: [id], onDelete: Cascade)
+  interaccion Interaccion?       @relation(fields: [interaccionId], references: [id], onDelete: SetNull)
+  respuestas  RespuestaEjercicio[]
+
+  @@index([sesionId, tipo])
+  @@index([interaccionId])
+  @@map("ejercicios")
+}
+
+// ========================================
+// RESPUESTAS Y RESULTADOS
+// ========================================
+
+model RespuestaEjercicio {
+  id          String   @id @default(cuid())
+  ejercicioId String
+  timestamp   DateTime @default(now())
+
+  // Datos de la respuesta
+  respuestaUsuario String
+  esCorrecta       Boolean
+  intentos         Int      @default(1)
+  pistasUsadas     String[] // Array de las pistas que se mostraron
+  tiempoRespuestaMs Int     // Tiempo en milisegundos
+
+  // Análisis emocional/estado (opcional)
+  estadoEmocional String? // 'frustrado' | 'confiado' | 'neutral' | null
+
+  // Relación
+  ejercicio Ejercicio @relation(fields: [ejercicioId], references: [id], onDelete: Cascade)
+
+  @@index([ejercicioId])
+  @@index([esCorrecta, timestamp])
+  @@map("respuestas_ejercicios")
+}
+
+// ========================================
+// MÉTRICAS AGREGADAS (Para Analytics)
+// ========================================
+
+model MetricaAgregada {
+  id        String   @id @default(cuid())
+  usuarioId String
+  fecha     DateTime @default(now()) @db.Date
+
+  // Métricas del día
+  ejerciciosCompletados    Int
+  tasaAcierto              Float // 0.0 - 1.0
+  tiempoPromedioRespuesta  Int   // en milisegundos
+  grafemasProblemáticos    String[] // ['b/d', 'p/q', etc.]
+  patronesError            Json  // Análisis más profundo en JSON
+
+  // Progreso longitudinal
+  nivelActual Int @default(1)
+  rachaActual Int @default(0) // Días consecutivos practicando
+
+  // Relación
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, fecha])
+  @@index([usuarioId, fecha])
+  @@map("metricas_agregadas")
+}
