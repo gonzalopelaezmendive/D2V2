@@ -7,6 +7,7 @@ import { TUTOR_SYSTEM_PROMPT } from './config/tutorPrompt.js';
 import { prisma } from './lib/prisma.js';
 import passport from './config/oauth.js';
 import authRoutes from './routes/auth.js';
+import authMockSimpleRoutes from './routes/auth-mock-simple.js';
 import ejerciciosRoutes from './routes/ejercicios.js';
 
 dotenv.config();
@@ -36,15 +37,16 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Rutas de autenticación y ejercicios
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authMockSimpleRoutes); // Mock OAuth para desarrollo (sin DB)
 app.use('/api/ejercicios', ejerciciosRoutes);
 
 const PORT = process.env.PORT || 3000;
 
 /**
  * ENDPOINT 1: Ingesta y Procesamiento de Diagnóstico para D2V2
+ * TEMPORALMENTE DESHABILITADO - Requiere DB configurada
  */
-app.post('/api/usuarios/registro', async (req, res) => {
+/* app.post('/api/usuarios/registro', async (req, res) => {
     const { nombre, edad, email, perfilClinico } = req.body;
 
     if (!nombre || !edad || !perfilClinico) {

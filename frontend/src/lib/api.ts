@@ -115,13 +115,18 @@ export const sesionesApi = {
 };
 
 // API de Autenticación OAuth
+// MODO DESARROLLO: Usa rutas mock que simulan OAuth sin credenciales reales
+const USE_MOCK_OAUTH = true; // Cambiar a false cuando tengas credenciales reales
+
 export const authApi = {
   loginGoogle: (tipo: 'menor' | 'adulto') => {
-    window.location.href = `${API_BASE_URL}/api/auth/google?tipo=${tipo}`;
+    const endpoint = USE_MOCK_OAUTH ? '/api/auth/mock/google' : '/api/auth/google';
+    window.location.href = `${API_BASE_URL}${endpoint}?tipo=${tipo}`;
   },
 
   loginMicrosoft: (tipo: 'menor' | 'adulto') => {
-    window.location.href = `${API_BASE_URL}/api/auth/microsoft?tipo=${tipo}`;
+    const endpoint = USE_MOCK_OAUTH ? '/api/auth/mock/microsoft' : '/api/auth/microsoft';
+    window.location.href = `${API_BASE_URL}${endpoint}?tipo=${tipo}`;
   },
 
   verificarToken: () => fetchApi('/api/auth/verify', { method: 'GET' }),
